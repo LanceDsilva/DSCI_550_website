@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haunted Places Timeline</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <!-- Floating ghost elements -->
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+
+    <header>
+        <h1>Haunted Places Timeline</h1>
+        <p>A temporal view of reported hauntings across the United States</p>
+    </header>
+
+    <button id="showMore" class="show-more-btn">
+        Show more Visualizations
+    </button>
+
+   
+    
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2023 Haunted Places Visualization | Created with D3.js</p>
+            <div class="haunted-message">"Time reveals all secrets..."</div>
+        </div>
+    </footer>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading timeline data...</p>
+    </div>
+
+    <div id="error" class="hidden">
+        <h2>Error Loading Data</h2>
+        <p id="error-message">
+            Unable to load the necessary data for this visualization.
+        </p>
+        <button onclick="location.reload()">Try Again</button>
+    </div>
+
+    <script>
+        document.getElementById('loading').classList.add('hidden');
+        
+        // Using the predefined timeline data
+        const timelineData = [
+            { year: 1800, count: 10 },
+            { year: 1850, count: 25 },
+            { year: 1900, count: 45 },
+            { year: 1950, count: 75 },
+            { year: 2000, count: 120 }
+        ];
+
+        // Set up dimensions
+        const margin = {top: 20, right: 20, bottom: 30, left: 50};
+        const width = 800 - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+
+        // Create SVG container
+        const svg = d3.select("#timeline-vis")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create scales
+        const x = d3.scaleTime()
+            .domain(d3.extent(timelineData, d => new Date(d.year, 0)))
+            .range([0, width]);
+
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(timelineData, d => d.count)])
+            .range([height, 0]);
+
+        // Create line generator
+        const line = d3.line()
+            .x(d => x(new Date(d.year, 0)))
+            .y(d => y(d.count));
+
+        // Add the line path
+        svg.append("path")
+            .datum(timelineData)
+            .attr("class", "line")
+            .attr("fill", "none")
+            .attr("stroke", "#b31b1e")
+            .attr("stroke-width", 2)
+            .attr("d", line);
+
+        // Add dots
+        svg.selectAll(".dot")
+            .data(timelineData)
+            .enter()
+            .append("circle")
+            .attr("class", "dot")
+            .attr("cx", d => x(new Date(d.year, 0)))
+            .attr("cy", d => y(d.count))
+            .attr("r", 5)
+            .attr("fill", "#b31b1e")
+            .on("mouseover", function(event, d) {
+                d3.select(this)
+                    .attr("r", 8)
+                    .attr("fill", "#ff0000");
+
+                d3.select("#info")
+                    .html(`
+                        <strong>Year: ${d.year}</strong><br>
+                        <span class="detail-label">Reported Hauntings: ${d.count}</span>
+                    `);
+            })
+            .on("mouseout", function() {
+                d3.select(this)
+                    .attr("r", 5)
+                    .attr("fill", "#b31b1e");
+            });
+
+        // Add axes
+        svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x));
+
+        svg.append("g")
+            .call(d3.axisLeft(y));
+    </script>
+</body>
+</html>

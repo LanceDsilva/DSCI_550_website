@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haunted Places of America</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Load D3.js and TopoJSON from CDN -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+    <script src="https://unpkg.com/us-atlas@3/counties-albers-10m.json"></script>
+</head>
+<body>
+    <!-- Floating ghost elements -->
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+    <div class="ghost"></div>
+
+    <header>
+        <h1>Haunted Places of America</h1>
+        <p>An interactive visualization of reported haunted locations across the United States</p>
+    </header>
+    
+    <a href="option.html">
+      <button class="show-more-btn">Show more Visualizations</button>
+  </a>
+
+    <main>
+        <section class="map-container">
+            <div id="visualization"></div>
+            <button id="showMore" class="show-more-btn">Show more Visualizations</button>
+            <div id="legend">
+                <h3>Haunted Places per State</h3>
+                <div class="legend-items"></div>
+            </div>
+        </section>
+
+        <section class="info-panel">
+            <div id="info-container">
+                <h2>State Information</h2>
+                <div id="info">
+                    <p>Click on a state to see details about its haunted places.</p>
+                </div>
+            </div>
+            <div id="about">
+                <h2>About This Map</h2>
+                <p>This interactive choropleth map shows the distribution of reported haunted places across the United States. 
+                States with darker shades of red have more reported haunted locations.</p>
+                <p>Data sources:</p>
+                <ul>
+                    <li>Haunted places data: Compiled from historical records and reports</li>
+                    <li>Map data: US Census Bureau geographical data</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2023 Haunted Places Visualization | Created with D3.js</p>
+            <div class="haunted-message">"The dead are never truly gone..."</div>
+        </div>
+    </footer>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading map data...</p>
+    </div>
+
+    <div id="error" class="hidden">
+        <h2>Error Loading Data</h2>
+        <p id="error-message">Unable to load the necessary data for this visualization.</p>
+        <button onclick="location.reload()">Try Again</button>
+    </div>
+
+    <!-- D3 Script to create the interactive choropleth map -->
+    <script>
+    // Load both JSON files: one for aggregated haunted data, one for TopoJSON map data.
+    Promise.all([
+      d3.json("data/haunted_places_state_counts.json"),
+      d3.json("https://unpkg.com/us-atlas@3/counties-albers-10m.json")
+    ]).then(function([stateData, us]) {
+      console.log("State Data:", stateData);
+      console.log("US TopoJSON:", us);
+
+      // Hide loading indicator
+      document.getElementById('loading').classList.add('hidden');
+
+      // Create a lookup Map for haunted counts using state name as key.
+      const frequencyMap = new Map(stateData.map(d => [d.state, d.count]));
+
+      // Define the color scale using d3.schemeReds (deep red for higher counts).
+      const minCount = d3.min(stateData, d => d.count);
+      const maxCount = d3.max(stateData, d => d.count);
+      const color = d3.scaleQuantize()
+                      .domain([minCount, maxCount])
+                      .range(d3.schemeReds[9]);
+
+      // Create responsive dimensions
+      const containerWidth = document.getElementById('visualization').clientWidth;
+      const aspectRatio = 610 / 975;
+      const height = containerWidth * aspectRatio;
+
+      // Append an SVG container within the #visualization section.
+      const svg = d3.select("#visualization")
+                    .append("svg")
+                    .attr("viewBox", `0 0 975 610`)
+                    .attr("width", containerWidth)
+                    .attr("height", height)
+                    .attr("preserveAspectRatio", "xMidYMid meet");
+
+      // Create a geographic path generator.
+      const path = d3.geoPath();
+
+      // Extract state features from the TopoJSON file.
+      const states = topojson.feature(us, us.objects.states).features;
+
+      // Draw each state.
+      const statePaths = svg.append("g")
+         .selectAll("path")
+         .data(states)
+         .join("path")
+         .attr("fill", d => {
+           const stateName = d.properties.name;
+           const count = frequencyMap.get(stateName);
+           return count != null ? color(count) : "#222";
+         })
+         .attr("d", path)
+         .attr("class", d => {
+           // Add special class for states with high haunted counts
+           const count = frequencyMap.get(d.properties.name) || 0;
+           return count > 100 ? "very-haunted" : 
+                  count > 70 ? "haunted" : 
+                  count > 40 ? "spooky" : "";
+         })
+         .on("mouseover", function(event, d) {
+           // Subtle glow effect on hover
+           d3.select(this)
+             .style("filter", "drop-shadow(0 0 6px rgba(255,255,255,0.4))");
+
+           // Play subtle sound effect for highly haunted states
+           const count = frequencyMap.get(d.properties.name) || 0;
+           if (count > 70) {
+             // Create spooky hover effect with cursor
+             const cursor = document.querySelector('.cursor-ghost');
+             if (!cursor) {
+               const ghostCursor = document.createElement('div');
+               ghostCursor.className = 'cursor-ghost';
+               ghostCursor.style.position = 'fixed';
+               ghostCursor.style.width = '20px';
+               ghostCursor.style.height = '20px';
+               ghostCursor.style.backgroundColor = 'rgba(179, 27, 30, 0.2)';
+               ghostCursor.style.borderRadius = '50%';
+               ghostCursor.style.pointerEvents = 'none';
+               ghostCursor.style.zIndex = '1000';
+               ghostCursor.style.transform = 'translate(-50%, -50%)';
+               ghostCursor.style.boxShadow = '0 0 20px rgba(179, 27, 30, 0.4)';
+               document.body.appendChild(ghostCursor);
+
+               document.addEventListener('mousemove', function(e) {
+                 ghostCursor.style.left = e.clientX + 'px';
+                 ghostCursor.style.top = e.clientY + 'px';
+               });
+
+               // Remove the cursor after 3 seconds
+               setTimeout(() => {
+                 if (ghostCursor && ghostCursor.parentNode) {
+                   ghostCursor.parentNode.removeChild(ghostCursor);
+                 }
+               }, 3000);
+             }
+           }
+         })
+         .on("mouseout", function() {
+           d3.select(this).style("filter", null);
+         })
+         .on("click", (event, d) => {
+           const stateName = d.properties.name;
+           const count = frequencyMap.get(stateName) || 0;
+
+           // Add a subtle flash effect on the whole map
+           svg.append("rect")
+             .attr("width", "100%")
+             .attr("height", "100%")
+             .attr("fill", "rgba(179, 27, 30, 0.1)")
+             .style("pointer-events", "none")
+             .transition()
+             .duration(300)
+             .style("opacity", 0)
+             .remove();
+
+           // Highlight the selected state
+           statePaths.attr("stroke", null).attr("stroke-width", null);
+           d3.select(event.currentTarget)
+             .attr("stroke", "#fff")
+             .attr("stroke-width", 2)
+             .transition()
+             .duration(300)
+             .attr("stroke-dasharray", "2,2")
+             .transition()
+             .duration(300)
+             .attr("stroke-dasharray", null);
+
+           // Create a more dramatic info update
+           const infoPanel = d3.select("#info");
+           infoPanel
+             .style("opacity", 0.3)
+             .html(`
+               <strong>${stateName}</strong><br/>
+               <span class="detail-label">Haunted Places:</span> ${count}<br/>
+               <span class="detail-label">Rank:</span> ${getStateRank(stateName, stateData)}<br/>
+               <p class="haunted-desc">This state has ${getDescription(count)} documented haunted locations.</p>
+             `)
+             .transition()
+             .duration(500)
+             .style("opacity", 1);
+
+           // Add a special message for the most haunted states
+           if (count > 100) {
+             setTimeout(() => {
+               const warningElement = document.createElement('div');
+               warningElement.className = 'haunting-warning';
+               warningElement.textContent = "Extreme paranormal activity detected";
+               warningElement.style.color = "#b31b1e";
+               warningElement.style.fontStyle = "italic";
+               warningElement.style.marginTop = "10px";
+               warningElement.style.textShadow = "0 0 5px rgba(179, 27, 30, 0.5)";
+               warningElement.style.animation = "pulse 2s infinite alternate";
+               infoPanel.node().appendChild(warningElement);
+             }, 500);
+           }
+         });
+
+      // Add tooltips.
+      statePaths.append("title")
+         .text(d => `${d.properties.name}\nHaunted Places: ${frequencyMap.get(d.properties.name) || 0}`);
+
+      // Draw state borders using a TopoJSON mesh.
+      svg.append("path")
+         .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+         .attr("fill", "none")
+         .attr("stroke", "#333")
+         .attr("stroke-linejoin", "round")
+         .attr("d", path);
+
+      // Create the legend
+      createLegend(color, minCount, maxCount);
+
+      // Handle window resize for responsiveness
+      window.addEventListener('resize', () => {
+          const newWidth = document.getElementById('visualization').clientWidth;
+          const newHeight = newWidth * aspectRatio;
+
+          svg.attr("width", newWidth)
+             .attr("height", newHeight);
+      });
+
+    }).catch(function(error) {
+      console.error("Error loading data:", error);
+      // Show error message
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+      document.getElementById('error-message').textContent = `Failed to load map data: ${error.message}`;
+    });
+
+    // Function to create the legend
+    function createLegend(colorScale, minCount, maxCount) {
+        const legendContainer = document.querySelector('.legend-items');
+        legendContainer.innerHTML = '';
+
+        // Create a range of values to show in the legend
+        const step = Math.round((maxCount - minCount) / 5);
+        const values = [];
+
+        for (let i = 0; i <= 5; i++) {
+            values.push(minCount + i * step);
+        }
+
+        // Create legend items
+        values.forEach((value, i) => {
+            if (i === 0) return; // Skip the first value to avoid overcrowding
+
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
+
+            const colorBox = document.createElement('div');
+            colorBox.className = 'legend-color';
+            colorBox.style.backgroundColor = colorScale(value);
+
+            const label = document.createElement('span');
+            label.textContent = value;
+
+            legendItem.appendChild(colorBox);
+            legendItem.appendChild(label);
+            legendContainer.appendChild(legendItem);
+        });
+    }
+
+    // Helper function to get state rank based on haunted place count
+    function getStateRank(stateName, stateData) {
+        // Sort states by count in descending order
+        const sortedStates = [...stateData].sort((a, b) => b.count - a.count);
+
+        // Find the index of the state (adding 1 to get rank starting from 1)
+        const rank = sortedStates.findIndex(d => d.state === stateName) + 1;
+
+        // Handle case where state isn't found
+        return rank > 0 ? `${rank} of ${stateData.length}` : "Not ranked";
+    }
+
+    // Helper function to get description based on count
+    function getDescription(count) {
+        if (count > 100) return "a very high number of";
+        if (count > 50) return "a significant number of";
+        if (count > 20) return "a moderate number of";
+        if (count > 10) return "several";
+        if (count > 0) return "a few";
+        return "no";
+    }
+    </script>
+</body>
+</html>

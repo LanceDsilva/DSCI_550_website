@@ -1,0 +1,65 @@
+<!-- D3 Script to create the interactive choropleth map -->
+  <script>
+    // Load both JSON files: one for aggregated haunted data, one for TopoJSON map data.
+    Promise.all([
+      d3.json("haunted_places_state_counts.json"),
+      d3.json("counties-albers-10m.json")
+    ]).then(function([stateData, us]) {
+      console.log("State Data:", stateData);
+      console.log("US TopoJSON:", us);
+      
+      // Create a lookup Map for haunted counts using state name as key.
+      const frequencyMap = new Map(stateData.map(d => [d.state, d.count]));
+      
+      // Define the color scale using d3.schemeReds (deep red for higher counts).
+      const minCount = d3.min(stateData, d => d.count);
+      const maxCount = d3.max(stateData, d => d.count);
+      const color = d3.scaleQuantize()
+                      .domain([minCount, maxCount])
+                      .range(d3.schemeReds[9]);
+      
+      // Append an SVG container within the #visualization section.
+      const svg = d3.select("#visualization")
+                    .append("svg")
+                    .attr("width", 975)
+                    .attr("height", 610);
+      
+      // Create a geographic path generator.
+      const path = d3.geoPath();
+      
+      // Extract state features from the TopoJSON file.
+      const states = topojson.feature(us, us.objects.states).features;
+      
+      // Draw each state.
+      const statePaths = svg.append("g")
+         .selectAll("path")
+         .data(states)
+         .join("path")
+         .attr("fill", d => {
+           const count = frequencyMap.get(d.properties.name);
+           return count != null ? color(count) : "#555";
+         })
+         .attr("d", path)
+         .on("click", (event, d) => {
+           const stateName = d.properties.name;
+           const count = frequencyMap.get(stateName) || 0;
+           d3.select("#info")
+             .html(`<strong>${stateName}</strong><br/>Haunted Places: ${count}`);
+         });
+      
+      // Add tooltips.
+      statePaths.append("title")
+         .text(d => `${d.properties.name}\nHaunted Places: ${frequencyMap.get(d.properties.name) || 0}`);
+      
+      // Draw state borders using a TopoJSON mesh.
+      svg.append("path")
+         .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+         .attr("fill", "none")
+         .attr("stroke", "#333")
+         .attr("stroke-linejoin", "round")
+         .attr("d", path);
+      
+    }).catch(function(error) {
+      console.error("Error loading data:", error);
+    });
+  </script>
