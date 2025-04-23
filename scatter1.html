@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Haunted Places - Circle Packing by State</title>
+<style>
+body { font-family: sans-serif; background: #111; color: white; }
+svg { width: 100%; height: 800px; display: block; margin: auto; }
+#controls { text-align: center; margin: 10px; }
+select { padding: 4px; margin: 0 10px; }
+circle { cursor: pointer; stroke: #ccc; fill-opacity: 0.8; }
+text { fill: white; pointer-events: none; font-size: 10px; text-anchor: middle; }
+
+.tooltip {
+  position: absolute;
+  background: white;
+  color: black;
+  padding: 10px;
+  border-radius: 5px;
+  pointer-events: none;
+  font-size: 12px;
+  border: 1px solid #999;
+}
+
+/* Added styling for the iframe container */
+.visualization-container {
+      width: 90%;
+      max-width: 1200px;
+      margin: 30px auto;
+      border: 5px solid #7b1113;
+      box-shadow: 0 0 20px rgba(255, 253, 253, 0.7);
+      background-color: #ffffff;
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    
+    /* Ensure axes are visible by adding padding */
+    .visualization-container iframe {
+      box-sizing: border-box;
+      padding: 20px 10px 35px 45px; /* Top, Right, Bottom, Left - extra padding for axes */
+      background-color: rgba(239, 239, 239, 0.8);
+    }
+
+/* Header styling */
+header {
+  background-color: #1a1a1a;
+  color: #fff;
+  text-align: center;
+  padding: 1.5rem 0;
+  border-bottom: 5px solid #7b1113;
+  position: relative;
+  overflow: hidden;
+}
+
+header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23b31b1e' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 20.83l2.83-2.83 1.41 1.41L1.41 22.24H0v-1.41zM0 3.07l2.83-2.83 1.41 1.41L1.41 4.48H0V3.07zm15.66 18.43l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm15.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zM11.31 40l2.83-2.83 1.41 1.41L12.72 40h-1.41zm18.48 0l2.83-2.83 1.41 1.41L31.2 40h-1.41zM3.07 40l2.83-2.83 1.41 1.41L4.48 40H3.07zm18.48 0l2.83-2.83 1.41 1.41L22.9 40h-1.41zm-11.3-18.48l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm-5.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm11.31 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zM0 31.17l2.83-2.83 1.41 1.41L1.41 32.59H0v-1.42zm5.66 5.66l2.83-2.83 1.41 1.41L7.07 38.24h-1.4v-1.41zm5.66-11.31l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66-5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66-5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm-25.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm-25.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm-25.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm-25.66 5.66l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41zm5.66 0l2.83-2.83 1.41 1.41-2.83 2.83-1.41-1.41z'/%3E%3C/g%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+header h1 {
+  font-family: 'Creepster', cursive;
+  font-size: 4rem;
+  margin-bottom: 0.5rem;
+  font-weight: 400;
+  text-shadow: 0 0 10px rgba(123, 17, 19, 0.7),
+               2px 2px 0px #000;
+  animation: flicker 5s infinite alternate;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 2px;
+}
+
+.show-more-btn {
+  display: block;
+  margin: 20px auto;
+  padding: 15px 30px;
+  background: rgba(123, 17, 19, 0.9);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-family: 'Creepster', cursive;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: 2px 2px 4px #000;
+  z-index: 10;
+  animation: glowPulse 2s infinite;
+}
+
+.show-more-btn:hover {
+  background: rgba(179, 27, 30, 0.9);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(6, 6, 6, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(79, 30, 30, 0.4) }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(9, 9, 9, 0.7) 100%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+@keyframes flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+      opacity: 0.99;
+      text-shadow: 0 0 10px rgba(123, 17, 19, 0.7),
+                  0 0 20px rgba(123, 17, 19, 0.5),
+                  0 0 30px rgba(123, 17, 19, 0.3);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+      opacity: 0.4;
+      text-shadow: none;
+  }
+}
+
+header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  position: relative;
+  z-index: 1;
+}
+
+/* Main content layout */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  main {
+      grid-template-columns: 2fr 1fr;
+  }
+}
+</style>
+<body>
+<div class="ghost"></div>
+<div class="ghost"></div>
+<div class="ghost"></div>
+<div class="ghost"></div>
+<div class="ghost"></div>
+<div class="ghost"></div>
+<div class="ghost"></div>
+
+<header>
+  <h1>Haunted Places Timeline</h1>
+</header>
+
+<a href="option.html">
+  <button class="show-more-btn">Show more Visualizations</button>
+</a>
+
+<div id="controls">
+  <label for="eventFilter">Event Type:</label>
+  <select id="eventFilter">
+    <option value="All">All</option>
+  </select>
+
+  <label for="timeFilter">Time of Day:</label>
+  <select id="timeFilter">
+    <option value="All">All</option>
+  </select>
+</div>
+
+<!-- Added the iframe visualization with appropriate styling -->
+<div class="visualization-container">
+    <!-- The iframe with specified additional height to ensure axes are visible -->
+    <iframe width="100%" height="829" frameborder="0" src="https://observablehq.com/embed/b3c7b6961f77adf1?cells=viewof+selection"></iframe>
+  </div>
+
+<div id="tooltip" class="tooltip" style="opacity:0;"></div>
+<svg></svg>
+</body>
