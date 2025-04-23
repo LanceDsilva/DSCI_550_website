@@ -34,7 +34,7 @@
             <div id="visualization"></div>
             <button id="showMore" class="show-more-btn">Show more Visualizations</button>
             <div id="legend">
-                <h3>Haunted Places per State</h3>
+                <!-- <h3>Haunted Places per State</h3> -->
                 <div class="legend-items"></div>
             </div>
         </section>
@@ -211,7 +211,7 @@
              .style("opacity", 0.3)
              .html(`
                <strong>${stateName}</strong><br/>
-               <span class="detail-label">Haunted Places:</span> ${count}<br/>
+        
                <span class="detail-label">Rank:</span> ${getStateRank(stateName, stateData)}<br/>
                <p class="haunted-desc">This state has ${getDescription(count)} documented haunted locations.</p>
              `)
@@ -248,7 +248,7 @@
          .attr("d", path);
 
       // Create the legend
-      createLegend(color, minCount, maxCount);
+      // createLegend(color, minCount, maxCount);
 
       // Handle window resize for responsiveness
       window.addEventListener('resize', () => {

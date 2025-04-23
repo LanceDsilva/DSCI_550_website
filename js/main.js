@@ -22,19 +22,19 @@ function createLegend(colorScale, minCount, maxCount) {
     values.forEach((value, i) => {
         if (i === 0) return; // Skip the first value to avoid overcrowding
         
-        const legendItem = document.createElement('div');
-        legendItem.className = 'legend-item';
+        // const legendItem = document.createElement('div');
+        // legendItem.className = 'legend-item';
         
-        const colorBox = document.createElement('div');
-        colorBox.className = 'legend-color';
-        colorBox.style.backgroundColor = colorScale(value);
+        // const colorBox = document.createElement('div');
+        // colorBox.className = 'legend-color';
+        // colorBox.style.backgroundColor = colorScale(value);
         
-        const label = document.createElement('span');
-        label.textContent = value;
+        // const label = document.createElement('span');
+        // label.textContent = value;
         
-        legendItem.appendChild(colorBox);
-        legendItem.appendChild(label);
-        legendContainer.appendChild(legendItem);
+        // legendItem.appendChild(colorBox);
+        // legendItem.appendChild(label);
+        // legendContainer.appendChild(legendItem);
     });
 }
 
